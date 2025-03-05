@@ -17,8 +17,12 @@ const database = firebase.database();
 const ref = database.ref('dadosProdutoras');
 
 // Função para salvar dados no Firebase
-function salvarDado(dado) {
-    ref.push(dado);
+function salvarDado(dado, id = null) {
+    if (id) {
+        ref.child(id).set(dado);
+    } else {
+        ref.push(dado);
+    }
 }
 
 // Função para carregar dados do Firebase
@@ -46,7 +50,7 @@ function adicionarLinhaTabela(dado) {
         <td data-label="Produtor">${dado.produtor}</td>
         <td data-label="Telefone">${dado.telefone}</td>
         <td data-label="Equipamentos">${dado.quantidade}</td>
-        <td data-label="Observação">${dado.observacao || '-'}</td>
+        <td data-label="Observação">${dado.observacao || '-'} </td>
         <td class="actions">
             <button class="btn-remover" onclick="removerDado('${dado.id}')">🗑️</button>
             <button class="btn-editar" onclick="editarDado('${dado.id}')">✏️</button>
@@ -72,48 +76,23 @@ window.editarDado = (id) => {
             document.getElementById('telefone').value = dado.telefone;
             document.getElementById('quantidade').value = dado.quantidade;
             document.getElementById('observacao').value = dado.observacao || '';
-
-            removerDado(id); // Remove o dado antigo para substituir pelo editado
+            document.getElementById('salvar-edicao').dataset.id = id;
         }
     });
 };
 
-// Função para enviar mensagem no WhatsApp
-window.enviarWhatsApp = (telefone) => {
-    const mensagemPadrao = "Olá, espero que esteja tudo bem! Gostaria de lembrar sobre a devolução dos equipamentos de venda de ingressos que ainda não retornaram. Precisamos deles de volta para continuar atendendo outros eventos. Por favor, entre em contato para acertarmos os detalhes da devolução. Agradeço a compreensão e aguardo seu retorno!";
-    const linkWhatsApp = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagemPadrao)}`;
-    window.open(linkWhatsApp, '_blank');
-};
+// Evento para salvar edição
+document.getElementById('salvar-edicao').addEventListener('click', () => {
+    const id = document.getElementById('salvar-edicao').dataset.id;
+    const evento = document.getElementById('evento').value;
+    const produtora = document.getElementById('produtora').value;
+    const produtor = document.getElementById('produtor').value;
+    const telefone = document.getElementById('telefone').value;
+    const quantidade = document.getElementById('quantidade').value;
+    const observacao = document.getElementById('observacao').value;
 
-// Carregar dados ao iniciar
-document.addEventListener('DOMContentLoaded', () => {
-    carregarDados();
-
-    // Adicionar dados ao formulário
-    document.getElementById('form-produtora').addEventListener('submit', (e) => {
-        e.preventDefault();
-
-        const evento = document.getElementById('evento').value;
-        const produtora = document.getElementById('produtora').value;
-        const produtor = document.getElementById('produtor').value;
-        const telefone = document.getElementById('telefone').value;
-        const quantidade = document.getElementById('quantidade').value;
-        const observacao = document.getElementById('observacao').value;
-
-        if (evento && produtora && produtor && telefone && quantidade) {
-            const novoDado = {
-                evento,
-                produtora,
-                produtor,
-                telefone,
-                quantidade,
-                observacao
-            };
-
-            salvarDado(novoDado);
-            document.getElementById('form-produtora').reset();
-        } else {
-            alert('Preencha todos os campos obrigatórios!');
-        }
-    });
+    if (id && evento && produtora && produtor && telefone && quantidade) {
+        salvarDado({ evento, produtora, produtor, telefone, quantidade, observacao }, id);
+        document.getElementById('form-produtora').reset();
+    }
 });
