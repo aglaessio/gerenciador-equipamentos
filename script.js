@@ -160,20 +160,21 @@ function submitForm(e) {
     const quantidade = document.getElementById('quantidade').value;
     const observacao = document.getElementById('observacao').value;
 
-    if (evento && produtora && produtor && telefone && quantidade) {
+    // Campos obrigatórios: evento, produtora e quantidade
+    if (produtora && quantidade) {
         const novoDado = {
-            evento,
+            evento: evento || '-', // Se não preenchido, usa um valor padrão
             produtora,
-            produtor,
-            telefone,
+            produtor: produtor || '-', // Se não preenchido, usa um valor padrão
+            telefone: telefone || '-',  // Se não preenchido, usa um valor padrão
             quantidade,
-            observacao
+            observacao: observacao || '-' // Se não preenchido, usa um valor padrão
         };
 
         salvarDado(novoDado);
         document.getElementById('form-produtora').reset();
     } else {
-        alert('Preencha todos os campos obrigatórios!');
+        alert('Preencha os campos obrigatórios: Evento, Produtora e Quantidade!');
     }
 }
 
