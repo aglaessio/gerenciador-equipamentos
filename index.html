@@ -36,6 +36,8 @@
             </div>
             <button type="submit">Adicionar</button>
             <button type="button" onclick="exportarCSV()">Exportar para CSV</button>
+            <button type="button" onclick="document.getElementById('importar-csv').click()">Importar CSV</button>
+            <input type="file" id="importar-csv" accept=".csv" style="display: none;">
         </form>
 
         <h2>Dados Cadastrados</h2>
@@ -193,6 +195,34 @@
             link.download = 'dados_produtoras.csv';
             link.click();
         };
+
+        // Função para importar dados de um arquivo CSV
+        document.getElementById('importar-csv').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                const linhas = text.split('\n').slice(1); // Ignora o cabeçalho
+                linhas.forEach(linha => {
+                    const [evento, produtora, produtor, telefone, quantidade, observacao] = linha.split(';');
+                    if (evento && produtora && produtor && telefone && quantidade) {
+                        const novoDado = {
+                            evento,
+                            produtora,
+                            produtor,
+                            telefone,
+                            quantidade,
+                            observacao
+                        };
+                        salvarDado(novoDado);
+                    }
+                });
+                alert('Dados importados com sucesso!');
+            };
+            reader.readAsText(file);
+        });
 
         // Carregar dados ao iniciar
         document.addEventListener('DOMContentLoaded', () => {
