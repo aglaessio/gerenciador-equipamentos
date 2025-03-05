@@ -100,20 +100,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const quantidade = document.getElementById('quantidade').value;
         const observacao = document.getElementById('observacao').value;
 
-        if (evento && produtora && produtor && telefone && quantidade) {
-            const novoDado = {
-                evento,
-                produtora,
-                produtor,
-                telefone,
-                quantidade,
-                observacao
-            };
+        const novoDado = {
+            evento,
+            produtora,
+            produtor,
+            telefone,
+            quantidade,
+            observacao
+        };
 
-            salvarDado(novoDado);
-            document.getElementById('form-produtora').reset();
-        } else {
-            alert('Preencha todos os campos obrigatórios!');
-        }
+        salvarDado(novoDado);
+        document.getElementById('form-produtora').reset();
     });
 });
