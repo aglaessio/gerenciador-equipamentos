@@ -12,7 +12,7 @@
         <form id="form-produtora">
             <div class="form-group">
                 <label for="evento">Nome do Evento:</label>
-                <input type="text" id="evento">
+                <input type="text" id="evento" required>
             </div>
             <div class="form-group">
                 <label for="produtora">Nome da Produtora:</label>
@@ -20,11 +20,11 @@
             </div>
             <div class="form-group">
                 <label for="produtor">Nome do Produtor:</label>
-                <input type="text" id="produtor">
+                <input type="text" id="produtor" required>
             </div>
             <div class="form-group">
                 <label for="telefone">Telefone:</label>
-                <input type="text" id="telefone" placeholder="Ex: 11999999999">
+                <input type="text" id="telefone" placeholder="Ex: 11999999999" required>
             </div>
             <div class="form-group">
                 <label for="quantidade">Quantidade de Equipamentos:</label>
@@ -36,6 +36,8 @@
             </div>
             <button type="submit">Adicionar</button>
             <button type="button" onclick="exportarCSV()">Exportar para CSV</button>
+            <button type="button" onclick="document.getElementById('importar-csv').click()">Importar CSV</button>
+            <input type="file" id="importar-csv" accept=".csv" style="display: none;">
         </form>
 
         <h2>Dados Cadastrados</h2>
@@ -58,8 +60,202 @@
     </div>
 
     <!-- Firebase SDK v9 via CDN -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
-    <script src="script.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+
+        // Configuração do Firebase (substitua pelas suas credenciais)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBt1YUBIbbJI5RLpDBHFTOJZS0AuL1p14k",
+            authDomain: "gerenciador-de-equipamen-bafc0.firebaseapp.com",
+            projectId: "gerenciador-de-equipamen-bafc0",
+            storageBucket: "gerenciador-de-equipamen-bafc0.appspot.com",
+            messagingSenderId: "226588097673",
+            appId: "1:226588097673:web:857d4aa003db654d185a58",
+            measurementId: "G-9ZFLHTDKT8"
+        };
+
+        // Inicialize o Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Referência para o banco de dados
+        const dbRef = ref(database, 'dadosProdutoras');
+
+        // Função para salvar dados no Firebase
+        function salvarDado(dado) {
+            push(dbRef, dado);
+        }
+
+        // Função para carregar dados do Firebase
+        function carregarDados() {
+            onValue(dbRef, (snapshot) => {
+                const dados = snapshot.val();
+                const listaDados = document.getElementById('lista-dados');
+                listaDados.innerHTML = ''; // Limpa a tabela
+
+                if (dados) {
+                    Object.keys(dados).forEach((id) => {
+                        const dado = dados[id];
+                        adicionarLinhaTabela({ id, ...dado });
+                    });
+                }
+            });
+        }
+
+        // Função para adicionar uma linha na tabela
+        function adicionarLinhaTabela(dado) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td data-label="Evento">${dado.evento}</td>
+                <td data-label="Produtora">${dado.produtora}</td>
+                <td data-label="Produtor">${dado.produtor}</td>
+                <td data-label="Telefone">${dado.telefone}</td>
+                <td data-label="Equipamentos">${dado.quantidade}</td>
+                <td data-label="Observação">${dado.observacao || '-'}</td>
+                <td class="actions">
+                    <button class="btn-remover" onclick="removerDado('${dado.id}')">🗑️</button>
+                    <button class="btn-editar" onclick="editarDado('${dado.id}')">✏️</button>
+                    <button class="btn-whatsapp" onclick="enviarWhatsApp('${dado.telefone}')">💬</button>
+                </td>
+            `;
+            document.getElementById('lista-dados').appendChild(row);
+        }
+
+        // Função para remover um dado
+        window.removerDado = (id) => {
+            const dadoRef = ref(database, `dadosProdutoras/${id}`);
+            remove(dadoRef);
+        };
+
+        // Função para editar um dado
+        window.editarDado = (id) => {
+            const dadoRef = ref(database, `dadosProdutoras/${id}`);
+            onValue(dadoRef, (snapshot) => {
+                const dado = snapshot.val();
+                if (dado) {
+                    document.getElementById('evento').value = dado.evento;
+                    document.getElementById('produtora').value = dado.produtora;
+                    document.getElementById('produtor').value = dado.produtor;
+                    document.getElementById('telefone').value = dado.telefone;
+                    document.getElementById('quantidade').value = dado.quantidade;
+                    document.getElementById('observacao').value = dado.observacao || '';
+
+                    removerDado(id); // Remove o dado antigo para substituir pelo editado
+                }
+            });
+        };
+
+        // Função para enviar mensagem no WhatsApp
+        window.enviarWhatsApp = (telefone) => {
+            const mensagemPadrao = "Olá, espero que esteja tudo bem! Gostaria de lembrar sobre a devolução dos equipamentos de venda de ingressos que ainda não retornaram. Precisamos deles de volta para continuar atendendo outros eventos. Por favor, entre em contato para acertarmos os detalhes da devolução. Agradeço a compreensão e aguardo seu retorno!";
+            const linkWhatsApp = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagemPadrao)}`;
+            window.open(linkWhatsApp, '_blank');
+        };
+
+        // Função para exportar dados para CSV
+        window.exportarCSV = () => {
+            const dados = [];
+            const linhas = document.querySelectorAll("#tabela-dados tbody tr");
+
+            linhas.forEach(linha => {
+                const colunas = linha.querySelectorAll("td");
+                const dado = {
+                    evento: colunas[0].textContent,
+                    produtora: colunas[1].textContent,
+                    produtor: colunas[2].textContent,
+                    telefone: colunas[3].textContent,
+                    quantidade: colunas[4].textContent,
+                    observacao: colunas[5].textContent
+                };
+                dados.push(dado);
+            });
+
+            if (dados.length === 0) {
+                alert('Nenhum dado para exportar!');
+                return;
+            }
+
+            const cabecalho = ["Evento", "Produtora", "Produtor", "Telefone", "Quantidade", "Observação"];
+            const linhasCSV = dados.map(dado => [
+                dado.evento,
+                dado.produtora,
+                dado.produtor,
+                dado.telefone,
+                dado.quantidade,
+                dado.observacao
+            ]);
+
+            const csv = [cabecalho, ...linhasCSV].map(row => row.join(';')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'dados_produtoras.csv';
+            link.click();
+        };
+
+        // Função para importar dados de um arquivo CSV
+        document.getElementById('importar-csv').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                const linhas = text.split('\n').slice(1); // Ignora o cabeçalho
+                linhas.forEach(linha => {
+                    const [evento, produtora, produtor, telefone, quantidade, observacao] = linha.split(';');
+                    if (evento && produtora && produtor && telefone && quantidade) {
+                        const novoDado = {
+                            evento,
+                            produtora,
+                            produtor,
+                            telefone,
+                            quantidade,
+                            observacao
+                        };
+                        salvarDado(novoDado);
+                    }
+                });
+                alert('Dados importados com sucesso!');
+            };
+            reader.readAsText(file);
+        });
+
+        // Carregar dados ao iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarDados();
+
+            // Adicionar dados ao formulário
+            document.getElementById('form-produtora').addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const evento = document.getElementById('evento').value;
+                const produtora = document.getElementById('produtora').value;
+                const produtor = document.getElementById('produtor').value;
+                const telefone = document.getElementById('telefone').value;
+                const quantidade = document.getElementById('quantidade').value;
+                const observacao = document.getElementById('observacao').value;
+
+                if (evento && produtora && produtor && telefone && quantidade) {
+                    const novoDado = {
+                        evento,
+                        produtora,
+                        produtor,
+                        telefone,
+                        quantidade,
+                        observacao
+                    };
+
+                    salvarDado(novoDado);
+                    document.getElementById('form-produtora').reset();
+                } else {
+                    alert('Preencha todos os campos obrigatórios!');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
