@@ -106,33 +106,6 @@ window.enviarWhatsApp = (telefone) => {
     window.open(linkWhatsApp, '_blank');
 };
 
-// Função para importar dados de um arquivo CSV
-document.getElementById('importar-csv').addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const text = e.target.result;
-        const linhas = text.split('\n').slice(1); // Ignora o cabeçalho
-        linhas.forEach(linha => {
-            const [evento, produtora, produtor, telefone, quantidade, observacao] = linha.split(';');
-            if (evento && produtora && produtor && telefone && quantidade) {
-                const novoDado = {
-                    evento,
-                    produtora,
-                    produtor,
-                    telefone,
-                    quantidade,
-                    observacao
-                };
-                salvarDado(novoDado);
-            }
-        });
-        alert('Dados importados com sucesso!');
-    };
-    reader.readAsText(file);
-});
 
 // Função para exportar dados para CSV
 window.exportarCSV = () => {
