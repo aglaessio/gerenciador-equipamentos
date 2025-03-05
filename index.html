@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Equipamentos</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Gerenciador de Equipamentos</h1>
+        <form id="form-produtora">
+            <div class="form-group">
+                <label for="evento">Nome do Evento:</label>
+                <input type="text" id="evento" required>
+            </div>
+            <div class="form-group">
+                <label for="produtora">Nome da Produtora:</label>
+                <input type="text" id="produtora" required>
+            </div>
+            <div class="form-group">
+                <label for="produtor">Nome do Produtor:</label>
+                <input type="text" id="produtor" required>
+            </div>
+            <div class="form-group">
+                <label for="telefone">Telefone:</label>
+                <input type="text" id="telefone" placeholder="Ex: 11999999999" required>
+            </div>
+            <div class="form-group">
+                <label for="quantidade">Quantidade de Equipamentos:</label>
+                <input type="number" id="quantidade" required>
+            </div>
+            <div class="form-group">
+                <label for="observacao">Observação:</label>
+                <textarea id="observacao" rows="3"></textarea>
+            </div>
+            <button type="submit">Adicionar</button>
+            <button type="button" onclick="exportarCSV()">Exportar para CSV</button>
+        </form>
+
+        <h2>Dados Cadastrados</h2>
+        <table id="tabela-dados">
+            <thead>
+                <tr>
+                    <th>Evento</th>
+                    <th>Produtora</th>
+                    <th>Produtor</th>
+                    <th>Telefone</th>
+                    <th>Equipamentos</th>
+                    <th>Observação</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="lista-dados">
+                <!-- Dados serão inseridos aqui via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
