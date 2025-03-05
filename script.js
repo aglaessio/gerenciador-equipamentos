@@ -160,7 +160,7 @@ function submitForm(e) {
     const quantidade = document.getElementById('quantidade').value;
     const observacao = document.getElementById('observacao').value;
 
-    // Campos obrigatórios: evento, produtora e quantidade
+    // Campos obrigatórios: produtora e quantidade
     if (produtora && quantidade) {
         const novoDado = {
             evento: evento || '-', // Se não preenchido, usa um valor padrão
@@ -174,7 +174,7 @@ function submitForm(e) {
         salvarDado(novoDado);
         document.getElementById('form-produtora').reset();
     } else {
-        alert('Preencha os campos obrigatórios: Evento, Produtora e Quantidade!');
+        alert('Preencha os campos obrigatórios: Produtora e Quantidade!');
     }
 }
 
