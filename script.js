@@ -17,12 +17,13 @@ const database = firebase.database();
 const ref = database.ref('dadosProdutoras');
 
 // Função para salvar dados no Firebase
-function salvarDado(dado, id = null) {
-    if (id) {
-        ref.child(id).set(dado);
-    } else {
-        ref.push(dado);
-    }
+function salvarDado(dado) {
+    ref.push(dado);
+}
+
+// Função para atualizar dados no Firebase
+function atualizarDado(id, dado) {
+    ref.child(id).update(dado);
 }
 
 // Função para carregar dados do Firebase
@@ -50,7 +51,7 @@ function adicionarLinhaTabela(dado) {
         <td data-label="Produtor">${dado.produtor}</td>
         <td data-label="Telefone">${dado.telefone}</td>
         <td data-label="Equipamentos">${dado.quantidade}</td>
-        <td data-label="Observação">${dado.observacao || '-'} </td>
+        <td data-label="Observação">${dado.observacao || '-'}</td>
         <td class="actions">
             <button class="btn-remover" onclick="removerDado('${dado.id}')">🗑️</button>
             <button class="btn-editar" onclick="editarDado('${dado.id}')">✏️</button>
@@ -76,14 +77,110 @@ window.editarDado = (id) => {
             document.getElementById('telefone').value = dado.telefone;
             document.getElementById('quantidade').value = dado.quantidade;
             document.getElementById('observacao').value = dado.observacao || '';
-            document.getElementById('salvar-edicao').dataset.id = id;
+
+            // Atualiza o formulário para salvar a edição
+            document.getElementById('form-produtora').onsubmit = (e) => {
+                e.preventDefault();
+
+                const novoDado = {
+                    evento: document.getElementById('evento').value,
+                    produtora: document.getElementById('produtora').value,
+                    produtor: document.getElementById('produtor').value,
+                    telefone: document.getElementById('telefone').value,
+                    quantidade: document.getElementById('quantidade').value,
+                    observacao: document.getElementById('observacao').value
+                };
+
+                atualizarDado(id, novoDado);
+                document.getElementById('form-produtora').reset();
+                document.getElementById('form-produtora').onsubmit = submitForm; // Restaura o submit original
+            };
         }
     });
 };
 
-// Evento para salvar edição
-document.getElementById('salvar-edicao').addEventListener('click', () => {
-    const id = document.getElementById('salvar-edicao').dataset.id;
+// Função para enviar mensagem no WhatsApp
+window.enviarWhatsApp = (telefone) => {
+    const mensagemPadrao = "Olá, espero que esteja tudo bem! Gostaria de lembrar sobre a devolução dos equipamentos de venda de ingressos que ainda não retornaram. Precisamos deles de volta para continuar atendendo outros eventos. Por favor, entre em contato para acertarmos os detalhes da devolução. Agradeço a compreensão e aguardo seu retorno!";
+    const linkWhatsApp = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagemPadrao)}`;
+    window.open(linkWhatsApp, '_blank');
+};
+
+// Função para importar dados de um arquivo CSV
+document.getElementById('importar-csv').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const text = e.target.result;
+        const linhas = text.split('\n').slice(1); // Ignora o cabeçalho
+        linhas.forEach(linha => {
+            const [evento, produtora, produtor, telefone, quantidade, observacao] = linha.split(';');
+            if (evento && produtora && produtor && telefone && quantidade) {
+                const novoDado = {
+                    evento,
+                    produtora,
+                    produtor,
+                    telefone,
+                    quantidade,
+                    observacao
+                };
+                salvarDado(novoDado);
+            }
+        });
+        alert('Dados importados com sucesso!');
+    };
+    reader.readAsText(file);
+});
+
+// Função para exportar dados para CSV
+window.exportarCSV = () => {
+    const dados = [];
+    const linhas = document.querySelectorAll("#tabela-dados tbody tr");
+
+    linhas.forEach(linha => {
+        const colunas = linha.querySelectorAll("td");
+        const dado = {
+            evento: colunas[0].textContent,
+            produtora: colunas[1].textContent,
+            produtor: colunas[2].textContent,
+            telefone: colunas[3].textContent,
+            quantidade: colunas[4].textContent,
+            observacao: colunas[5].textContent
+        };
+        dados.push(dado);
+    });
+
+    if (dados.length === 0) {
+        alert('Nenhum dado para exportar!');
+        return;
+    }
+
+    const cabecalho = ["Evento", "Produtora", "Produtor", "Telefone", "Quantidade", "Observação"];
+    const linhasCSV = dados.map(dado => [
+        dado.evento,
+        dado.produtora,
+        dado.produtor,
+        dado.telefone,
+        dado.quantidade,
+        dado.observacao
+    ]);
+
+    const csv = [cabecalho, ...linhasCSV].map(row => row.join(';')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'dados_produtoras.csv';
+    link.click();
+};
+
+// Função para submeter o formulário
+function submitForm(e) {
+    e.preventDefault();
+
     const evento = document.getElementById('evento').value;
     const produtora = document.getElementById('produtora').value;
     const produtor = document.getElementById('produtor').value;
@@ -91,8 +188,27 @@ document.getElementById('salvar-edicao').addEventListener('click', () => {
     const quantidade = document.getElementById('quantidade').value;
     const observacao = document.getElementById('observacao').value;
 
-    if (id && evento && produtora && produtor && telefone && quantidade) {
-        salvarDado({ evento, produtora, produtor, telefone, quantidade, observacao }, id);
+    if (evento && produtora && produtor && telefone && quantidade) {
+        const novoDado = {
+            evento,
+            produtora,
+            produtor,
+            telefone,
+            quantidade,
+            observacao
+        };
+
+        salvarDado(novoDado);
         document.getElementById('form-produtora').reset();
+    } else {
+        alert('Preencha todos os campos obrigatórios!');
     }
+}
+
+// Carregar dados ao iniciar
+document.addEventListener('DOMContentLoaded', () => {
+    carregarDados();
+
+    // Adicionar dados ao formulário
+    document.getElementById('form-produtora').addEventListener('submit', submitForm);
 });
